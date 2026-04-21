@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { signInWithGoogle } from "@/lib/auth/supabaseAuth";
+import { signInWithGoogle } from "@/lib/auth/clientAuth";
 
 type LoginButtonProps = {
   label: string;
@@ -14,8 +14,10 @@ export function LoginButton({ label, pendingMessage }: LoginButtonProps) {
 
   async function handleLogin() {
     try {
+      setMessage("");
       await signInWithGoogle();
-    } catch {
+    } catch (error) {
+      console.error("Google login failed", error);
       setMessage(pendingMessage);
     }
   }

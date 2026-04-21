@@ -1,14 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { defaultLocale, isLocale, locales } from "@/lib/i18n/config";
+import { updateSupabaseSession } from "@/lib/supabase/proxy";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const pathnameHasLocale = locales.some(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
 
   if (pathnameHasLocale) {
-    return;
+    return updateSupabaseSession(request);
   }
 
   const preferredLanguage = request.headers

@@ -6,5 +6,6 @@ export type AuthSession = {
   userId: string | null;
   email: string | null;
   plan: AccountPlan | null;
+  displayName?: string | null;
   provider: "demo" | "supabase";
 };

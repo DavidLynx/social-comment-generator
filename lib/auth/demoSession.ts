@@ -7,6 +7,7 @@ export function createDemoSession(status: AccountState): AuthSession {
     userId: status === "anonymous" ? null : "demo-user",
     email: status === "anonymous" ? null : "creator@example.com",
     plan: status === "premium" ? "premium" : status === "logged_in" ? "free" : null,
+    displayName: status === "anonymous" ? null : "Creator",
     provider: "demo",
   };
 }

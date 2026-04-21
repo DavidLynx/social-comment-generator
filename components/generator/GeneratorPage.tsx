@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { Locale } from "@/lib/i18n/config";
-import type { AccountState, MockupData, Platform } from "@/lib/mockups/types";
+import type { MockupData, Platform } from "@/lib/mockups/types";
 import { createMockupId, defaultMockup } from "@/lib/mockups/defaults";
 import { normalizeMockupData } from "@/lib/mockups/normalizeMockup";
 import { getUsageLimit } from "@/lib/usage/limits";
-import { createDemoSession, demoAccountStates } from "@/lib/auth/demoSession";
+import { incrementAnonymousUsage, readAnonymousUsage } from "@/lib/usage/localUsage";
+import type { AuthSession } from "@/lib/auth/types";
 import {
   clearRecentMockups,
   readRecentMockups,
@@ -24,21 +25,60 @@ import { UsageCounter } from "./UsageCounter";
 
 type GeneratorPageProps = {
   dictionary: Dictionary;
+  initialSession: AuthSession;
   locale: Locale;
 };
 
-export function GeneratorPage({ dictionary }: GeneratorPageProps) {
-  const [mockup, setMockup] = useState<MockupData>(defaultMockup);
+type UsageState = {
+  count: number;
+  limit: number;
+};
+
+export function GeneratorPage({ dictionary, initialSession }: GeneratorPageProps) {
+  const initialAccountState =
+    initialSession.status === "anonymous" ? "anonymous" : "logged_in";
+  const [mockup, setMockup] = useState<MockupData>({
+    ...defaultMockup,
+    accountState: initialAccountState,
+  });
   const [recent, setRecent] = useState<MockupData[]>([]);
   const [saved, setSaved] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [usage, setUsage] = useState<UsageState>({
+    count: 0,
+    limit: getUsageLimit(initialAccountState),
+  });
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     queueMicrotask(() => {
       setRecent(readRecentMockups());
+      const anonymousUsage = readAnonymousUsage();
+      setUsage((current) =>
+        initialAccountState === "anonymous"
+          ? { count: anonymousUsage.count, limit: getUsageLimit("anonymous") }
+          : current,
+      );
     });
-  }, []);
+  }, [initialAccountState]);
+
+  useEffect(() => {
+    if (initialAccountState === "anonymous") {
+      return;
+    }
+
+    fetch("/api/usage")
+      .then((response) => response.json())
+      .then((payload) => {
+        if (payload.usage) {
+          setUsage({
+            count: payload.usage.count ?? 0,
+            limit: payload.usage.limit ?? getUsageLimit("logged_in"),
+          });
+        }
+      })
+      .catch((error) => console.error("Usage read failed", error));
+  }, [initialAccountState]);
 
   function updateMockup(update: Partial<MockupData>) {
     setSaved(false);
@@ -55,10 +95,6 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
 
   function handlePlatformChange(platform: Platform) {
     updateMockup({ platform });
-  }
-
-  function handleAccountChange(accountState: AccountState) {
-    updateMockup({ accountState });
   }
 
   function handleSave() {
@@ -82,6 +118,32 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
         throw new Error("The mockup export target is not mounted.");
       }
 
+      if (mockup.accountState === "logged_in") {
+        const response = await fetch("/api/usage", { method: "POST" });
+        const payload = await response.json();
+
+        if (!response.ok || !payload.allowed) {
+          setExportError(dictionary.generator.usageLimitReached);
+          return;
+        }
+
+        if (payload.usage) {
+          setUsage({
+            count: payload.usage.count ?? usage.count,
+            limit: payload.usage.limit ?? getUsageLimit("logged_in"),
+          });
+        }
+      } else {
+        const nextUsage = incrementAnonymousUsage(getUsageLimit("anonymous"));
+
+        if (!nextUsage.allowed) {
+          setExportError(dictionary.generator.usageLimitReached);
+          return;
+        }
+
+        setUsage({ count: nextUsage.count, limit: nextUsage.limit });
+      }
+
       await exportElementToPng({
         data: mockup,
         fileName: `${mockup.platform}-comment-${Date.now()}.png`,
@@ -100,8 +162,7 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
     setRecent([]);
   }
 
-  const session = createDemoSession(mockup.accountState);
-  const isAuthenticated = session.status === "logged_in" || session.status === "premium";
+  const isAuthenticated = initialSession.status === "logged_in" || initialSession.status === "premium";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -126,21 +187,17 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
             <div className="mb-3 text-sm font-semibold text-white">
               {dictionary.generator.accountState}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {demoAccountStates.map((state) => (
-                <Button
-                  key={state}
-                  onClick={() => handleAccountChange(state)}
-                  type="button"
-                  variant={
-                    mockup.accountState === state ? "primary" : "secondary"
-                  }
-                >
-                  {state === "anonymous"
-                    ? dictionary.generator.anonymous
-                    : dictionary.generator.loggedIn}
-                </Button>
-              ))}
+            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+              <div className="text-sm font-semibold text-white">
+                {mockup.accountState === "anonymous"
+                  ? dictionary.generator.anonymous
+                  : dictionary.generator.loggedIn}
+              </div>
+              <p className="mt-1 text-xs leading-5 text-zinc-500">
+                {mockup.accountState === "anonymous"
+                  ? dictionary.generator.anonymousHint
+                  : initialSession.email}
+              </p>
             </div>
           </section>
           <CommentEditorForm
@@ -158,8 +215,9 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
                   {dictionary.generator.preview}
                 </h2>
                 <UsageCounter
+                  count={usage.count}
                   label={dictionary.generator.usage}
-                  limit={getUsageLimit(mockup.accountState)}
+                  limit={usage.limit}
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -186,7 +244,15 @@ export function GeneratorPage({ dictionary }: GeneratorPageProps) {
             dictionary={dictionary}
             items={recent}
             onClear={handleClearRecent}
-            onReuse={(item) => setMockup(normalizeMockupData(item))}
+            onReuse={(item) => {
+              const normalized = normalizeMockupData(item);
+              setMockup({
+                ...normalized,
+                accountState: initialAccountState,
+                verified:
+                  initialAccountState === "anonymous" ? false : normalized.verified,
+              });
+            }}
           />
         </section>
       </div>

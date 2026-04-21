@@ -3,11 +3,18 @@ export const en = {
     title: "Social Comment Generator",
     description:
       "Create transparent PNG TikTok-style and Instagram-style comment mockups.",
+    landingTitle: "Social Comment Generator | TikTok & Instagram Comment Mockups",
+    landingDescription:
+      "Create realistic TikTok-style and Instagram-style comment mockups as transparent PNGs. Independent tool for creators, marketers, parody, education, and concept work.",
+    generatorTitle: "Comment Mockup Generator | TikTok & Instagram PNG Export",
+    generatorDescription:
+      "Generate bilingual social comment mockups with custom avatars, colors, replies, verified badges, and transparent PNG export.",
   },
   nav: {
     home: "Home",
     generator: "Generator",
     login: "Login",
+    logout: "Logout",
     language: "Language",
   },
   footer: {
@@ -95,6 +102,7 @@ export const en = {
     instagram: "Instagram-style",
     accountState: "Account state",
     anonymous: "Anonymous",
+    anonymousHint: "Exports include a small watermark. Log in to unlock verified badges.",
     loggedIn: "Logged in",
     formTitle: "Comment details",
     username: "Username",
@@ -119,6 +127,7 @@ export const en = {
     reuse: "Reuse",
     clear: "Clear",
     usage: "Daily usage",
+    usageLimitReached: "Daily export limit reached. Try again tomorrow.",
     watermark: "Made with Social Comment Generator",
     avatarSource: "Avatar source",
     avatarGenerated: "Generated",
@@ -143,6 +152,7 @@ export const en = {
     title: "Login",
     body: "Phase 1 is wired with an auth boundary so Google/Supabase can be connected next. Use the generator account toggle to preview logged-in behavior for now.",
     button: "Continue with Google",
+    alreadyLoggedIn: "You are logged in. Open the generator to export without a watermark.",
     pending:
       "Supabase Auth is prepared in the codebase but not connected to production credentials yet.",
   },

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://social-comment-generator.vercel.app"),
   title: "Social Comment Generator",
   description:
     "Create bilingual TikTok-style and Instagram-style social comment mockups.",

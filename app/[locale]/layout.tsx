@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { isLocale, locales } from "@/lib/i18n/config";
+import { getSupabaseSession } from "@/lib/auth/supabaseAuth";
 
 type LocaleLayoutProps = {
   children: ReactNode;
@@ -40,10 +41,11 @@ export default async function LocaleLayout({
   }
 
   const dictionary = await getDictionary(locale);
+  const session = await getSupabaseSession();
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Navbar dictionary={dictionary} locale={locale} />
+      <Navbar dictionary={dictionary} locale={locale} session={session} />
       <main>{children}</main>
       <Footer dictionary={dictionary} locale={locale} />
     </div>

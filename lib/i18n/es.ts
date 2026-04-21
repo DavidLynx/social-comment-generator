@@ -3,11 +3,20 @@ export const es = {
     title: "Generador de Comentarios Sociales",
     description:
       "Crea mockups de comentarios estilo TikTok e Instagram como PNG transparente.",
+    landingTitle:
+      "Generador de Comentarios Sociales | Mockups estilo TikTok e Instagram",
+    landingDescription:
+      "Crea mockups realistas de comentarios estilo TikTok e Instagram como PNG transparente. Herramienta independiente para creadores, marketing, parodia, educación y conceptos.",
+    generatorTitle:
+      "Generador de Mockups de Comentarios | TikTok e Instagram en PNG",
+    generatorDescription:
+      "Genera mockups bilingües de comentarios sociales con avatar personalizado, colores, respuestas, insignia verificada y exportación PNG transparente.",
   },
   nav: {
     home: "Inicio",
     generator: "Generador",
     login: "Login",
+    logout: "Salir",
     language: "Idioma",
   },
   footer: {
@@ -99,6 +108,8 @@ export const es = {
     instagram: "Estilo Instagram",
     accountState: "Estado de cuenta",
     anonymous: "Anónimo",
+    anonymousHint:
+      "Las exportaciones incluyen una marca pequeña. Inicia sesión para usar insignias verificadas.",
     loggedIn: "Logueado",
     formTitle: "Detalles del comentario",
     username: "Usuario",
@@ -124,19 +135,23 @@ export const es = {
     reuse: "Reutilizar",
     clear: "Borrar",
     usage: "Uso diario",
+    usageLimitReached:
+      "Llegaste al límite diario de exportaciones. Intenta de nuevo mañana.",
     watermark: "Hecho con Social Comment Generator",
     avatarSource: "Fuente del avatar",
     avatarGenerated: "Generado",
     avatarUploaded: "Subido",
     avatarUpload: "Imagen de perfil personalizada",
-    avatarUploadHelp: "PNG, JPG o WEBP hasta 4 MB. Se recorta localmente en tu navegador.",
+    avatarUploadHelp:
+      "PNG, JPG o WEBP hasta 4 MB. Se recorta localmente en tu navegador.",
     avatarChooseFile: "Elegir imagen",
     avatarRemove: "Quitar imagen",
     avatarUploadTypeError: "Usa una imagen PNG, JPG, JPEG o WEBP.",
     avatarUploadSizeError: "Usa una imagen menor de 4 MB.",
     avatarUploadGenericError: "No se pudo leer esa imagen. Prueba otro archivo.",
     avatarCropTitle: "Recortar imagen de perfil",
-    avatarCropHelp: "Ajusta el recorte para que se vea claro como avatar circular.",
+    avatarCropHelp:
+      "Ajusta el recorte para que se vea claro como avatar circular.",
     avatarCropApply: "Usar avatar",
     avatarCropCancel: "Cancelar",
     avatarCropError: "No se pudo recortar esa imagen. Prueba otro archivo.",
@@ -146,8 +161,10 @@ export const es = {
   },
   auth: {
     title: "Login",
-    body: "La fase 1 queda preparada con una frontera de auth para conectar Google/Supabase después. Por ahora usa el toggle de cuenta en el generador para previsualizar el estado logueado.",
+    body: "Conecta con Google para exportar sin marca de agua, activar la insignia verificada y usar 20 exportaciones diarias.",
     button: "Continuar con Google",
+    alreadyLoggedIn:
+      "Ya iniciaste sesión. Abre el generador para exportar sin marca de agua.",
     pending:
       "Supabase Auth está preparado en el código, pero aún no está conectado con credenciales de producción.",
   },
@@ -167,7 +184,7 @@ export const es = {
       body: [
         "La fase 1 guarda mockups recientes, colores seleccionados y preferencias en el localStorage de tu navegador.",
         "Esta fase no implementa archivo permanente en la nube, pagos ni subida de avatares.",
-        "La futura integración con Supabase Auth puede guardar identidad de cuenta, plan y conteos de uso para aplicar límites gratis y premium de forma confiable.",
+        "La integración con Supabase Auth puede guardar identidad de cuenta, plan y conteos de uso para aplicar límites gratis y premium de forma confiable.",
         "La app no necesita acceso a una cuenta real de TikTok o Instagram para crear mockups.",
       ],
     },
