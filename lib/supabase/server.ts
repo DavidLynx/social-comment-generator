@@ -1,9 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { getSupabaseConfig, warnIfSupabaseMissing } from "./config";
+import {
+  debugSupabaseConfig,
+  getSupabaseConfig,
+  warnIfSupabaseMissing,
+} from "./config";
 
 export async function createSupabaseServerClient() {
   const config = getSupabaseConfig();
+  debugSupabaseConfig("server client init");
 
   if (!config.isConfigured || !config.url || !config.publishableKey) {
     warnIfSupabaseMissing("server client");

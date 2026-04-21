@@ -9,6 +9,20 @@ export function getSupabaseConfig() {
   };
 }
 
+export function debugSupabaseConfig(context: string) {
+  if (process.env.NODE_ENV === "production") {
+    return;
+  }
+
+  const config = getSupabaseConfig();
+
+  console.info(`[Supabase debug] ${context}`, {
+    hasPublishableKey: Boolean(config.publishableKey),
+    hasUrl: Boolean(config.url),
+    isConfigured: config.isConfigured,
+  });
+}
+
 export function warnIfSupabaseMissing(context: string) {
   const { isConfigured } = getSupabaseConfig();
 

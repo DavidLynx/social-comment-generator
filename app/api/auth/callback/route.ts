@@ -8,6 +8,14 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get("next") ?? "/en/generator";
   const supabase = await createSupabaseServerClient();
 
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[Supabase debug] auth callback received", {
+      hasCode: Boolean(code),
+      next,
+      supabaseClientInitialized: Boolean(supabase),
+    });
+  }
+
   if (!supabase || !code) {
     return NextResponse.redirect(new URL(next, request.url));
   }
@@ -18,6 +26,12 @@ export async function GET(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[Supabase debug] auth callback session restored", {
+        hasUser: Boolean(user),
+      });
+    }
 
     if (user) {
       try {
