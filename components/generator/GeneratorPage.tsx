@@ -122,7 +122,21 @@ export function GeneratorPage({ dictionary, initialSession }: GeneratorPageProps
         const response = await fetch("/api/usage", { method: "POST" });
         const payload = await response.json();
 
-        if (!response.ok || !payload.allowed) {
+        if (!response.ok) {
+          if (
+            response.status === 429 ||
+            payload.error === "daily_limit_reached"
+          ) {
+            setExportError(dictionary.generator.usageLimitReached);
+            return;
+          }
+
+          console.error("Authenticated usage increment failed", payload);
+          setExportError(dictionary.generator.exportFailed);
+          return;
+        }
+
+        if (payload.allowed === false) {
           setExportError(dictionary.generator.usageLimitReached);
           return;
         }

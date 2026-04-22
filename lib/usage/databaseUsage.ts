@@ -15,11 +15,43 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+async function syncProfileForUsage(supabase: SupabaseClient, user: User) {
+  try {
+    await ensureProfile(supabase, user);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Profile sync failed during usage check", {
+        error,
+        userId: user.id,
+      });
+    }
+  }
+}
+
+function toSnapshot({
+  count,
+  date,
+  limit,
+}: {
+  count: number;
+  date: string;
+  limit: number | null;
+}): UsageSnapshot {
+  return {
+    allowed: limit === null || count < limit,
+    count,
+    date,
+    limit,
+    remaining: limit === null ? null : Math.max(0, limit - count),
+    source: "database",
+  };
+}
+
 export async function getAuthenticatedUsage(
   supabase: SupabaseClient,
   user: User,
 ): Promise<UsageSnapshot> {
-  await ensureProfile(supabase, user);
+  await syncProfileForUsage(supabase, user);
 
   const date = todayKey();
   const policy = getUsagePolicy("logged_in");
@@ -37,38 +69,59 @@ export async function getAuthenticatedUsage(
   const count = data?.count ?? 0;
   const limit = policy.dailyLimit;
 
-  return {
-    allowed: limit === null || count < limit,
+  return toSnapshot({
     count,
     date,
     limit,
-    remaining: limit === null ? null : Math.max(0, limit - count),
-    source: "database",
-  };
+  });
 }
 
 export async function incrementAuthenticatedUsage(
   supabase: SupabaseClient,
   user: User,
 ): Promise<UsageSnapshot> {
-  const current = await getAuthenticatedUsage(supabase, user);
+  await syncProfileForUsage(supabase, user);
+
+  const date = todayKey();
+  const policy = getUsagePolicy("logged_in");
+  const limit = policy.dailyLimit;
+  const { data, error } = await supabase
+    .from("daily_usage")
+    .select("count")
+    .eq("user_id", user.id)
+    .eq("usage_date", date)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const current = toSnapshot({
+    count: data?.count ?? 0,
+    date,
+    limit,
+  });
 
   if (!current.allowed) {
     return current;
   }
 
   const nextCount = current.count + 1;
-  const { error } = await supabase.from("daily_usage").upsert(
-    {
-      user_id: user.id,
-      usage_date: current.date,
-      count: nextCount,
-    },
-    { onConflict: "user_id,usage_date" },
-  );
+  const write =
+    data === null
+      ? await supabase.from("daily_usage").insert({
+          count: nextCount,
+          usage_date: current.date,
+          user_id: user.id,
+        })
+      : await supabase
+          .from("daily_usage")
+          .update({ count: nextCount })
+          .eq("user_id", user.id)
+          .eq("usage_date", current.date);
 
-  if (error) {
-    throw error;
+  if (write.error) {
+    throw write.error;
   }
 
   return {
