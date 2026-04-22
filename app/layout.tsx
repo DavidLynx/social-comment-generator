@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Social Comment Generator",
   description:
     "Create bilingual TikTok-style and Instagram-style social comment mockups.",
+  verification: {
+    google: "GmDibdMIwDxhmer4HphXDrqgct6T_gP3V5xo16tG2DU",
+  },
 };
 
 export default function RootLayout({
