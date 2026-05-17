@@ -22,6 +22,7 @@ import { CommentEditorForm } from "./CommentEditorForm";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { RecentMockups } from "./RecentMockups";
 import { UsageCounter } from "./UsageCounter";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 
 type GeneratorPageProps = {
   dictionary: Dictionary;
@@ -80,21 +81,13 @@ export function GeneratorPage({ dictionary, initialSession }: GeneratorPageProps
       .catch((error) => console.error("Usage read failed", error));
   }, [initialAccountState]);
 
-  function updateMockup(update: Partial<MockupData>) {
+  function updateMockup(next: MockupData) {
     setSaved(false);
-    setMockup((current) => {
-      const next = { ...current, ...update };
-
-      if (update.accountState === "anonymous") {
-        next.verified = false;
-      }
-
-      return next;
-    });
+    setMockup(next.accountState === "anonymous" ? { ...next, verified: false } : next);
   }
 
   function handlePlatformChange(platform: Platform) {
-    updateMockup({ platform });
+    updateMockup({ ...mockup, platform });
   }
 
   function handleSave() {
@@ -179,25 +172,33 @@ export function GeneratorPage({ dictionary, initialSession }: GeneratorPageProps
   const isAuthenticated = initialSession.status === "logged_in" || initialSession.status === "premium";
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
+    <div className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pt-6">
+      <div className="mb-4 max-w-3xl animate-fade-up">
+        <BrandLogo
+          className="mb-2"
+          imageClassName="h-auto w-[230px] sm:w-[250px]"
+          variant="brand"
+        />
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
           {dictionary.generator.title}
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">
           {dictionary.generator.subtitle}
         </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-7 text-zinc-400">
+          {dictionary.generator.freeUseCopy}
+        </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
         <aside className="space-y-4">
-          <section className="rounded-lg border border-white/10 bg-zinc-950 p-4">
+          <section className="rounded-lg border border-white/10 bg-zinc-950 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition duration-200 ease-out hover:border-cyan-300/20">
             <PlatformTabs
               dictionary={dictionary}
               onChange={handlePlatformChange}
               value={mockup.platform}
             />
           </section>
-          <section className="rounded-lg border border-white/10 bg-zinc-950 p-4">
+          <section className="rounded-lg border border-white/10 bg-zinc-950 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition duration-200 ease-out hover:border-cyan-300/20">
             <div className="mb-3 text-sm font-semibold text-white">
               {dictionary.generator.accountState}
             </div>
@@ -222,7 +223,7 @@ export function GeneratorPage({ dictionary, initialSession }: GeneratorPageProps
           />
         </aside>
         <section className="space-y-4">
-          <div className="rounded-lg border border-white/10 bg-zinc-950 p-4">
+          <div className="rounded-lg border border-white/10 bg-zinc-950 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition duration-200 ease-out hover:border-cyan-300/20">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-white">

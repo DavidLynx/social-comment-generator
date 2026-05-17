@@ -16,6 +16,11 @@ export function TikTokCommentMockup({
   watermarkText,
 }: TikTokCommentMockupProps) {
   const theme = getCommentColorTheme(data.colorPreset);
+  const replies = data.replies.filter((reply) => reply.text.trim().length > 0);
+  const mainAvatarImage =
+    data.mainAuthor.avatarType === "uploaded"
+      ? data.mainAuthor.avatarUrl
+      : data.mainAuthor.avatarPresetUrl;
 
   return (
     <SharedMockupShell watermark={watermark} watermarkText={watermarkText}>
@@ -30,18 +35,20 @@ export function TikTokCommentMockup({
       >
         <div className="grid grid-cols-[56px_minmax(0,1fr)_24px] gap-3">
           <AvatarBubble
-            avatarId={data.avatarId}
-            customAvatarDataUrl={data.customAvatarDataUrl}
-            source={data.avatarSource}
+            avatarId={data.mainAuthor.avatarPresetId ?? "avatar-01"}
+            imageSrc={mainAvatarImage}
             size="lg"
           />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-semibold">{data.username}</span>
+              <span className="truncate font-semibold">{data.mainAuthor.name}</span>
               {data.verified ? <VerifiedBadge /> : null}
             </div>
+            <div className="mt-0.5 truncate text-xs" style={{ color: theme.muted }}>
+              @{data.mainAuthor.handle}
+            </div>
             <p className="mt-1 text-[15px] leading-6" style={{ color: theme.text }}>
-              {data.comment}
+              {data.mainText}
             </p>
             <div
               className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium"
@@ -51,31 +58,45 @@ export function TikTokCommentMockup({
               <span>Reply</span>
               <span>{formatLikes(data.likes)}</span>
             </div>
-            {data.showReply && data.reply ? (
-              <div
-                className="mt-4 grid grid-cols-[32px_minmax(0,1fr)] gap-3 border-l pl-3"
-                style={{ borderColor: theme.border }}
-              >
-                <AvatarBubble
-                  avatarId={data.avatarId}
-                  customAvatarDataUrl={data.customAvatarDataUrl}
-                  source={data.avatarSource}
-                  size="sm"
-                />
-                <div className="min-w-0">
+            {replies.length ? (
+              <div className="mt-4 grid gap-4">
+                {replies.map((reply) => (
                   <div
-                    className="truncate text-sm font-semibold"
-                    style={{ color: theme.muted }}
+                    className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 border-l pl-3"
+                    key={reply.id}
+                    style={{ borderColor: theme.border }}
                   >
-                    {data.handle}
+                    <AvatarBubble
+                      avatarId={reply.author.avatarPresetId ?? "avatar-02"}
+                      imageSrc={
+                        reply.author.avatarType === "uploaded"
+                          ? reply.author.avatarUrl
+                          : reply.author.avatarPresetUrl
+                      }
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <div
+                        className="truncate text-sm font-semibold"
+                        style={{ color: theme.muted }}
+                      >
+                        {reply.author.name}
+                      </div>
+                      <div
+                        className="mt-0.5 truncate text-xs"
+                        style={{ color: theme.muted }}
+                      >
+                        @{reply.author.handle}
+                      </div>
+                      <p
+                        className="mt-1 text-sm leading-5"
+                        style={{ color: theme.text }}
+                      >
+                        {reply.text}
+                      </p>
+                    </div>
                   </div>
-                  <p
-                    className="mt-1 text-sm leading-5"
-                    style={{ color: theme.text }}
-                  >
-                    {data.reply}
-                  </p>
-                </div>
+                ))}
               </div>
             ) : null}
           </div>

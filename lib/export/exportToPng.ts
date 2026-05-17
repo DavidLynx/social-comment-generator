@@ -1,7 +1,7 @@
+import { loadImageSource } from "@/lib/avatar/cropImage";
 import { getAvatar } from "@/lib/mockups/avatars";
 import { getCommentColorTheme } from "@/lib/mockups/commentColors";
-import type { MockupData } from "@/lib/mockups/types";
-import { loadImageSource } from "@/lib/avatar/cropImage";
+import type { MockupAuthor, MockupData } from "@/lib/mockups/types";
 
 type ExportOptions = {
   data: MockupData;
@@ -12,25 +12,32 @@ type ExportOptions = {
 };
 
 type ExportAssetAudit = {
-  remoteImages: string[];
-  remoteBackgrounds: string[];
   localImages: string[];
+  remoteBackgrounds: string[];
+  remoteImages: string[];
+};
+
+type ReplyLayoutMetrics = {
+  authorHandle: string;
+  authorLabel: string;
+  textLines: string[];
 };
 
 type LayoutMetrics = {
-  cardHeight: number;
-  contentX: number;
-  contentWidth: number;
   actionX: number;
   avatarSize: number;
-  title: string;
+  cardHeight: number;
   commentLines: string[];
-  replyName: string;
-  replyLines: string[];
+  contentWidth: number;
+  contentX: number;
+  replies: ReplyLayoutMetrics[];
+  title: string;
 };
 
 type DrawCardOptions = {
-  customAvatarImage?: HTMLImageElement;
+  mainAvatarImage?: HTMLImageElement;
+  replyAvatarImages: Record<string, HTMLImageElement | undefined>;
+  watermarkLogoImage?: HTMLImageElement;
 };
 
 const exportPadding = 28;
@@ -42,6 +49,10 @@ const actionColumnWidth = 24;
 
 const nextFrame = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+function getVisibleReplies(data: MockupData) {
+  return data.replies.filter((reply) => reply.text.trim().length > 0);
+}
 
 async function waitForFonts() {
   if ("fonts" in document) {
@@ -189,23 +200,23 @@ function roundRect(
 
 function drawAvatar(
   context: CanvasRenderingContext2D,
-  avatarId: string,
+  author: MockupAuthor,
   x: number,
   y: number,
   size: number,
-  customAvatarImage?: HTMLImageElement,
+  avatarImage?: HTMLImageElement,
 ) {
-  if (customAvatarImage) {
+  if (avatarImage) {
     context.save();
     context.beginPath();
     context.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
     context.clip();
-    context.drawImage(customAvatarImage, x, y, size, size);
+    context.drawImage(avatarImage, x, y, size, size);
     context.restore();
     return;
   }
 
-  const avatar = getAvatar(avatarId);
+  const avatar = getAvatar(author.avatarPresetId ?? "avatar-01");
   const gradient = context.createLinearGradient(x, y, x + size, y + size);
   gradient.addColorStop(0, avatar.colors[0]);
   gradient.addColorStop(0.55, avatar.colors[1]);
@@ -220,10 +231,16 @@ function drawAvatar(
   context.restore();
 
   context.fillStyle = "#ffffff";
-  context.font = `800 ${Math.round(size * 0.34)}px Arial, sans-serif`;
+  context.font = avatar.symbol
+    ? `${Math.round(size * 0.52)}px "Apple Color Emoji", "Segoe UI Emoji", Arial, sans-serif`
+    : `800 ${Math.round(size * 0.34)}px Arial, sans-serif`;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(getAvatar(avatarId).initials, x + size / 2, y + size / 2 + 1);
+  context.fillText(
+    avatar.symbol ?? avatar.initials,
+    x + size / 2,
+    y + size / 2 + (avatar.symbol ? 1.5 : 1),
+  );
   context.textAlign = "left";
   context.textBaseline = "top";
 }
@@ -359,32 +376,43 @@ function measureLayout(
   const actionX = cardWidth - cardPadding - actionColumnWidth;
   const contentWidth = actionX - columnGap - contentX;
   const badgeReserve = data.verified ? 24 : 0;
-  const titleSource = data.platform === "tiktok" ? data.username : data.handle;
-  const replyNameSource = data.platform === "tiktok" ? data.handle : data.username;
+  const titleSource =
+    data.platform === "tiktok" ? data.mainAuthor.name : data.mainAuthor.handle;
 
   context.font = "700 16px Arial, sans-serif";
   const title = ellipsize(context, titleSource, contentWidth - badgeReserve);
 
   context.font = "400 15px Arial, sans-serif";
-  const commentLines = wrapText(context, data.comment, contentWidth);
+  const commentLines = wrapText(context, data.mainText, contentWidth);
 
-  context.font = "700 14px Arial, sans-serif";
-  const replyName = ellipsize(context, replyNameSource, contentWidth - 44);
+  const replies = getVisibleReplies(data).map((reply) => {
+    const authorLabel =
+      data.platform === "tiktok" ? reply.author.name : reply.author.name;
+    const authorHandle = `@${reply.author.handle}`;
 
-  context.font = "400 14px Arial, sans-serif";
-  const replyTextWidth =
-    data.platform === "tiktok" ? contentWidth - 56 : contentWidth - 44;
-  const replyLines =
-    data.showReply && data.reply ? wrapText(context, data.reply, replyTextWidth) : [];
+    context.font = "700 14px Arial, sans-serif";
+    const titleWidth = data.platform === "tiktok" ? contentWidth - 44 : contentWidth - 44;
+    const replyTitle = ellipsize(context, authorLabel, titleWidth);
 
-  const titleBlockHeight = 22;
+    context.font = "400 14px Arial, sans-serif";
+    const textWidth = contentWidth - 44;
+    const textLines = wrapText(context, reply.text, textWidth);
+
+    return {
+      authorHandle,
+      authorLabel: replyTitle,
+      textLines,
+    };
+  });
+
+  const titleBlockHeight = data.platform === "tiktok" ? 38 : 38;
   const commentBlockHeight = commentLines.length * 22;
   const metaBlockHeight = 18;
-  const replyBlockHeight = replyLines.length
-    ? 16 + 20 + replyLines.length * 20
-    : 0;
+  const repliesBlockHeight = replies.reduce((total, reply) => {
+    return total + 16 + 16 + reply.textLines.length * 20 + 14;
+  }, 0);
   const contentHeight =
-    titleBlockHeight + 4 + commentBlockHeight + 10 + metaBlockHeight + replyBlockHeight;
+    titleBlockHeight + 4 + commentBlockHeight + 10 + metaBlockHeight + repliesBlockHeight;
 
   return {
     actionX,
@@ -393,8 +421,7 @@ function measureLayout(
     commentLines,
     contentWidth,
     contentX,
-    replyLines,
-    replyName,
+    replies,
     title,
   };
 }
@@ -402,11 +429,11 @@ function measureLayout(
 function drawCard(
   context: CanvasRenderingContext2D,
   data: MockupData,
-  watermarkText: string,
+  _watermarkText: string,
   x: number,
   y: number,
   cardWidth: number,
-  options: DrawCardOptions = {},
+  options: DrawCardOptions,
 ) {
   const theme = getCommentColorTheme(data.colorPreset);
   const layout = measureLayout(context, data, cardWidth);
@@ -429,11 +456,11 @@ function drawCard(
 
   drawAvatar(
     context,
-    data.avatarId,
+    data.mainAuthor,
     x + cardPadding,
     y + cardPadding,
     layout.avatarSize,
-    options.customAvatarImage,
+    options.mainAvatarImage,
   );
 
   let cursorY = y + cardPadding;
@@ -454,7 +481,12 @@ function drawCard(
     drawVerifiedBadge(context, contentX + titleWidth + 6, cursorY + 2, 16);
   }
 
-  cursorY += 26;
+  cursorY += 20;
+  context.fillStyle = theme.muted;
+  context.font = "400 12px Arial, sans-serif";
+  context.fillText(`@${data.mainAuthor.handle}`, contentX, cursorY);
+
+  cursorY += 18;
   context.fillStyle = theme.text;
   context.font = "400 15px Arial, sans-serif";
   cursorY += drawWrappedText(context, layout.commentLines, contentX, cursorY, 22);
@@ -468,42 +500,50 @@ function drawCard(
       : `${data.timestamp}    ${data.likes} likes    Reply`;
   context.fillText(ellipsize(context, meta, layout.contentWidth), contentX, cursorY);
 
-  if (layout.replyLines.length) {
-    cursorY += 34;
-    const replyX = contentX + 12;
+  if (layout.replies.length) {
+    cursorY += 24;
 
-    if (data.platform === "tiktok") {
-      context.strokeStyle = theme.border;
-      context.beginPath();
-      context.moveTo(contentX, cursorY);
-      context.lineTo(contentX, cursorY + 28 + layout.replyLines.length * 20);
-      context.stroke();
+    layout.replies.forEach((replyLayout, index) => {
+      const reply = getVisibleReplies(data)[index];
+      const avatarY = cursorY;
+      const replyX = contentX + (data.platform === "tiktok" ? 12 : 0);
+      const replyContentX = replyX + 44;
+
+      if (data.platform === "tiktok") {
+        context.strokeStyle = theme.border;
+        context.beginPath();
+        context.moveTo(contentX, avatarY);
+        context.lineTo(
+          contentX,
+          avatarY + 16 + 16 + replyLayout.textLines.length * 20 + 6,
+        );
+        context.stroke();
+      }
+
       drawAvatar(
         context,
-        data.avatarId,
+        reply.author,
         replyX,
-        cursorY,
+        avatarY,
         32,
-        options.customAvatarImage,
+        options.replyAvatarImages[reply.id],
       );
+
+      context.fillStyle = data.platform === "tiktok" ? theme.muted : theme.text;
+      context.font = "700 14px Arial, sans-serif";
+      context.fillText(replyLayout.authorLabel, replyContentX, avatarY);
+
       context.fillStyle = theme.muted;
-      context.font = "700 14px Arial, sans-serif";
-      context.fillText(layout.replyName, replyX + 44, cursorY);
+      context.font = "400 12px Arial, sans-serif";
+      context.fillText(replyLayout.authorHandle, replyContentX, avatarY + 16);
+
       context.fillStyle = theme.text;
       context.font = "400 14px Arial, sans-serif";
-      drawWrappedText(context, layout.replyLines, replyX + 44, cursorY + 20, 20);
-    } else {
-      context.strokeStyle = theme.border;
-      context.beginPath();
-      context.moveTo(contentX, cursorY + 12);
-      context.lineTo(contentX + 32, cursorY + 12);
-      context.stroke();
-      context.fillStyle = theme.text;
-      context.font = "700 14px Arial, sans-serif";
-      context.fillText(layout.replyName, contentX + 44, cursorY);
-      context.font = "400 14px Arial, sans-serif";
-      drawWrappedText(context, layout.replyLines, contentX + 44, cursorY + 20, 20);
-    }
+      drawWrappedText(context, replyLayout.textLines, replyContentX, avatarY + 34, 20);
+
+      cursorY =
+        avatarY + 34 + replyLayout.textLines.length * 20 + 14;
+    });
   }
 
   context.fillStyle = theme.muted;
@@ -512,27 +552,45 @@ function drawCard(
   context.fillText("♡", actionX + actionColumnWidth, y + cardPadding + 2);
   context.textAlign = "left";
 
-  if (data.accountState === "anonymous") {
-    context.font = "500 10px Arial, sans-serif";
-    const watermarkWidth = Math.min(
-      context.measureText(watermarkText).width + 16,
-      cardWidth - cardPadding * 2,
+  if (data.accountState === "anonymous" && data.showWatermark && options.watermarkLogoImage) {
+    const watermarkSize = 16;
+    const watermarkX = x + cardWidth - watermarkSize - 12;
+    const watermarkY = y + cardHeight - watermarkSize - 10;
+    context.save();
+    context.globalAlpha = 0.58;
+    context.drawImage(
+      options.watermarkLogoImage,
+      watermarkX,
+      watermarkY,
+      watermarkSize,
+      watermarkSize,
     );
-    const watermarkHeight = 20;
-    const watermarkX = x + cardWidth - watermarkWidth - 12;
-    const watermarkY = y + cardHeight - watermarkHeight - 8;
-    context.fillStyle = "rgba(0, 0, 0, 0.35)";
-    roundRect(context, watermarkX, watermarkY, watermarkWidth, watermarkHeight, 4);
-    context.fill();
-    context.fillStyle = "rgba(255, 255, 255, 0.58)";
-    context.fillText(
-      ellipsize(context, watermarkText, watermarkWidth - 16),
-      watermarkX + 8,
-      watermarkY + 5,
-    );
+    context.restore();
   }
 
   return cardHeight;
+}
+
+async function loadAuthorAvatarImage(author: MockupAuthor) {
+  const source =
+    author.avatarType === "uploaded"
+      ? author.avatarUrl
+      : author.avatarPresetUrl ??
+        getAvatar(author.avatarPresetId ?? "avatar-01").imageSrc;
+
+  if (!source) {
+    return undefined;
+  }
+
+  try {
+    return await loadImageSource(source);
+  } catch (error) {
+    console.error("Avatar image could not be loaded for export", {
+      error,
+      source,
+    });
+    return undefined;
+  }
 }
 
 export async function exportElementToPng({
@@ -561,15 +619,18 @@ export async function exportElementToPng({
   }
 
   const cardHeight = measureLayout(measureContext, data, cardWidth).cardHeight;
-  let customAvatarImage: HTMLImageElement | undefined;
-
-  if (data.avatarSource === "uploaded" && data.customAvatarDataUrl) {
-    try {
-      customAvatarImage = await loadImageSource(data.customAvatarDataUrl);
-    } catch (error) {
-      console.error("Uploaded avatar could not be loaded for export", error);
-    }
-  }
+  const mainAvatarImage = await loadAuthorAvatarImage(data.mainAuthor);
+  const watermarkLogoImage = await loadImageSource("/assets/icons/commentra-logo.svg").catch(
+    (error) => {
+      console.error("Watermark logo could not be loaded for export", error);
+      return undefined;
+    },
+  );
+  const visibleReplies = getVisibleReplies(data);
+  const replyAvatarEntries = await Promise.all(
+    visibleReplies.map(async (reply) => [reply.id, await loadAuthorAvatarImage(reply.author)] as const),
+  );
+  const replyAvatarImages = Object.fromEntries(replyAvatarEntries);
 
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil((cardWidth + exportPadding * 2) * scale);
@@ -584,7 +645,9 @@ export async function exportElementToPng({
   context.scale(scale, scale);
   context.clearRect(0, 0, canvas.width, canvas.height);
   drawCard(context, data, watermarkText, exportPadding, exportPadding, cardWidth, {
-    customAvatarImage,
+    mainAvatarImage,
+    replyAvatarImages,
+    watermarkLogoImage,
   });
 
   const blob = await new Promise<Blob>((resolve, reject) => {

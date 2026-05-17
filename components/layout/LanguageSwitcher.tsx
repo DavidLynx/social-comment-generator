@@ -17,7 +17,7 @@ export function LanguageSwitcher({ dictionary, locale }: LanguageSwitcherProps) 
   return (
     <div
       aria-label={dictionary.nav.language}
-      className="grid grid-cols-2 rounded-md border border-white/10 bg-white/6 p-1"
+      className="grid h-9 grid-cols-2 rounded-md border border-white/10 bg-white/6 p-[3px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] transition duration-200 ease-out"
     >
       {locales.map((nextLocale) => {
         const href = pathname.replace(`/${locale}`, `/${nextLocale}`);
@@ -26,10 +26,10 @@ export function LanguageSwitcher({ dictionary, locale }: LanguageSwitcherProps) 
         return (
           <Link
             aria-current={isActive ? "page" : undefined}
-            className={`rounded px-2.5 py-1.5 text-xs font-bold uppercase transition ${
+            className={`inline-flex items-center rounded px-2.5 text-xs font-bold uppercase transition-[background-color,color,box-shadow] duration-200 ease-out ${
               isActive
-                ? "bg-white text-slate-950"
-                : "text-zinc-400 hover:text-white"
+                ? "bg-cyan-300 text-slate-950 shadow-[0_0_20px_rgba(34,211,238,0.18)]"
+                : "text-zinc-400 hover:bg-white/6 hover:text-white"
             }`}
             href={href}
             key={nextLocale}

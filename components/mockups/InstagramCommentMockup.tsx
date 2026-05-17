@@ -16,6 +16,11 @@ export function InstagramCommentMockup({
   watermarkText,
 }: InstagramCommentMockupProps) {
   const theme = getCommentColorTheme(data.colorPreset);
+  const replies = data.replies.filter((reply) => reply.text.trim().length > 0);
+  const mainAvatarImage =
+    data.mainAuthor.avatarType === "uploaded"
+      ? data.mainAuthor.avatarUrl
+      : data.mainAuthor.avatarPresetUrl;
 
   return (
     <SharedMockupShell watermark={watermark} watermarkText={watermarkText}>
@@ -30,19 +35,21 @@ export function InstagramCommentMockup({
       >
         <div className="grid grid-cols-[44px_minmax(0,1fr)_24px] gap-3">
           <AvatarBubble
-            avatarId={data.avatarId}
-            customAvatarDataUrl={data.customAvatarDataUrl}
-            source={data.avatarSource}
+            avatarId={data.mainAuthor.avatarPresetId ?? "avatar-01"}
+            imageSrc={mainAvatarImage}
           />
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-1.5">
               <span className="truncate text-[15px] font-semibold leading-6">
-                {data.handle}
+                {data.mainAuthor.handle}
               </span>
               {data.verified ? <VerifiedBadge /> : null}
             </div>
+            <div className="mt-0.5 truncate text-xs" style={{ color: theme.muted }}>
+              {data.mainAuthor.name}
+            </div>
             <p className="mt-1 text-[15px] leading-6" style={{ color: theme.text }}>
-              {data.comment}
+              {data.mainText}
             </p>
             <div
               className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold"
@@ -52,23 +59,38 @@ export function InstagramCommentMockup({
               <span>{data.likes} likes</span>
               <span>Reply</span>
             </div>
-            {data.showReply && data.reply ? (
-              <div className="mt-4 grid grid-cols-[32px_minmax(0,1fr)] gap-3">
-                <div
-                  className="mt-3 h-px w-8"
-                  style={{ background: theme.border }}
-                />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    {data.username}
+            {replies.length ? (
+              <div className="mt-4 grid gap-4">
+                {replies.map((reply) => (
+                  <div className="grid grid-cols-[32px_minmax(0,1fr)] gap-3" key={reply.id}>
+                    <AvatarBubble
+                      avatarId={reply.author.avatarPresetId ?? "avatar-02"}
+                      imageSrc={
+                        reply.author.avatarType === "uploaded"
+                          ? reply.author.avatarUrl
+                          : reply.author.avatarPresetUrl
+                      }
+                      size="sm"
+                    />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">
+                        {reply.author.name}
+                      </div>
+                      <div
+                        className="mt-0.5 truncate text-xs"
+                        style={{ color: theme.muted }}
+                      >
+                        @{reply.author.handle}
+                      </div>
+                      <p
+                        className="mt-1 text-sm leading-5"
+                        style={{ color: theme.text }}
+                      >
+                        {reply.text}
+                      </p>
+                    </div>
                   </div>
-                  <p
-                    className="mt-1 text-sm leading-5"
-                    style={{ color: theme.text }}
-                  >
-                    {data.reply}
-                  </p>
-                </div>
+                ))}
               </div>
             ) : null}
           </div>

@@ -16,7 +16,7 @@ export function PreviewCanvas({
   mockup,
   previewRef,
 }: PreviewCanvasProps) {
-  const watermark = mockup.accountState === "anonymous";
+  const watermark = mockup.accountState === "anonymous" && mockup.showWatermark;
 
   return (
     <div className="grid min-h-[420px] place-items-center overflow-hidden rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(16,185,129,0.06),rgba(244,63,94,0.08))] p-5">

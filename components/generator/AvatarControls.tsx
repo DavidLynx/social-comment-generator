@@ -2,7 +2,8 @@
 
 import { useId, useRef, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { MockupData } from "@/lib/mockups/types";
+import type { MockupAuthor } from "@/lib/mockups/types";
+import { getAvatar } from "@/lib/mockups/avatars";
 import { readImageFile } from "@/lib/avatar/cropImage";
 import { Button } from "@/components/ui/Button";
 import { AvatarBubble } from "@/components/mockups/AvatarBubble";
@@ -14,19 +15,22 @@ const maxAvatarBytes = 4 * 1024 * 1024;
 
 type AvatarControlsProps = {
   dictionary: Dictionary;
-  mockup: MockupData;
-  onChange: (update: Partial<MockupData>) => void;
+  author: MockupAuthor;
+  onChange: (author: MockupAuthor) => void;
 };
 
 export function AvatarControls({
   dictionary,
-  mockup,
+  author,
   onChange,
 }: AvatarControlsProps) {
   const inputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImage, setPendingImage] = useState("");
   const [error, setError] = useState("");
+  const hasUploadedAvatar = Boolean(author.avatarUrl?.startsWith("data:"));
+  const previewImage =
+    author.avatarType === "uploaded" ? author.avatarUrl : author.avatarPresetUrl;
 
   async function handleFileChange(file: File | undefined) {
     if (!file) {
@@ -64,26 +68,26 @@ export function AvatarControls({
         </div>
         <div className="grid grid-cols-2 rounded-md border border-white/10 bg-black/40 p-1">
           <button
-            aria-pressed={mockup.avatarSource === "generated"}
+            aria-pressed={author.avatarType === "preset"}
             className={`rounded px-3 py-2 text-sm font-semibold transition ${
-              mockup.avatarSource === "generated"
+              author.avatarType === "preset"
                 ? "bg-white text-slate-950"
                 : "text-zinc-400 hover:text-white"
             }`}
-            onClick={() => onChange({ avatarSource: "generated" })}
+            onClick={() => onChange({ ...author, avatarType: "preset" })}
             type="button"
           >
             {dictionary.generator.avatarGenerated}
           </button>
           <button
-            aria-pressed={mockup.avatarSource === "uploaded"}
+            aria-pressed={author.avatarType === "uploaded"}
             className={`rounded px-3 py-2 text-sm font-semibold transition ${
-              mockup.avatarSource === "uploaded"
+              author.avatarType === "uploaded"
                 ? "bg-white text-slate-950"
                 : "text-zinc-400 hover:text-white"
             }`}
-            disabled={!mockup.customAvatarDataUrl}
-            onClick={() => onChange({ avatarSource: "uploaded" })}
+            disabled={!hasUploadedAvatar}
+            onClick={() => onChange({ ...author, avatarType: "uploaded" })}
             type="button"
           >
             {dictionary.generator.avatarUploaded}
@@ -93,9 +97,8 @@ export function AvatarControls({
       <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
         <div className="flex items-center gap-3">
           <AvatarBubble
-            avatarId={mockup.avatarId}
-            customAvatarDataUrl={mockup.customAvatarDataUrl}
-            source={mockup.avatarSource}
+            avatarId={author.avatarPresetId ?? "avatar-01"}
+            imageSrc={previewImage}
             size="lg"
           />
           <div className="min-w-0 flex-1">
@@ -115,7 +118,7 @@ export function AvatarControls({
             accept={supportedAvatarTypes.join(",")}
             className="sr-only"
             id={inputId}
-            name="customAvatar"
+            name={`customAvatar-${inputId}`}
             onChange={(event) => handleFileChange(event.target.files?.[0])}
             ref={fileInputRef}
             type="file"
@@ -127,12 +130,13 @@ export function AvatarControls({
           >
             {dictionary.generator.avatarChooseFile}
           </Button>
-          {mockup.customAvatarDataUrl ? (
+          {hasUploadedAvatar ? (
             <Button
               onClick={() =>
                 onChange({
-                  avatarSource: "generated",
-                  customAvatarDataUrl: undefined,
+                  ...author,
+                  avatarType: "preset",
+                  avatarUrl: undefined,
                 })
               }
               type="button"
@@ -144,11 +148,18 @@ export function AvatarControls({
         </div>
         {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
       </div>
-      {mockup.avatarSource === "generated" ? (
+      {author.avatarType === "preset" ? (
         <AvatarPicker
           dictionary={dictionary}
-          onChange={(avatarId) => onChange({ avatarId })}
-          value={mockup.avatarId}
+          onChange={(avatarPresetId) => {
+            const avatar = getAvatar(avatarPresetId);
+            onChange({
+              ...author,
+              avatarPresetId,
+              avatarPresetUrl: avatar.imageSrc,
+            });
+          }}
+          value={author.avatarPresetId ?? "avatar-01"}
         />
       ) : null}
       {pendingImage ? (
@@ -156,9 +167,9 @@ export function AvatarControls({
           dictionary={dictionary}
           imageSource={pendingImage}
           onCancel={() => setPendingImage("")}
-          onConfirm={(customAvatarDataUrl) => {
+          onConfirm={(avatarUrl) => {
             setPendingImage("");
-            onChange({ avatarSource: "uploaded", customAvatarDataUrl });
+            onChange({ ...author, avatarType: "uploaded", avatarUrl });
           }}
         />
       ) : null}

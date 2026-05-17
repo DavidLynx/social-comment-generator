@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import type { AuthSession } from "@/lib/auth/types";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { BrandLogo } from "./BrandLogo";
 
 type NavbarProps = {
   dictionary: Dictionary;
@@ -13,27 +14,40 @@ type NavbarProps = {
 
 export function Navbar({ dictionary, locale, session }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-background/86 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 h-[60px] border-b border-white/10 bg-background/86 backdrop-blur-xl">
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href={`/${locale}`}
-          className="flex items-center gap-3 text-sm font-semibold text-white"
+          className="group flex h-full items-center gap-3 rounded-md py-0 text-sm font-semibold text-white transition duration-200 ease-out hover:opacity-95"
         >
-          <span className="grid size-8 place-items-center rounded-md bg-cyan-300 text-slate-950">
-            SC
+          <span className="inline-flex md:hidden">
+            <BrandLogo
+              aria-hidden="true"
+              className="drop-shadow-[0_0_14px_rgba(34,211,238,0.16)] transition duration-200 ease-out group-hover:brightness-110"
+              imageClassName="h-[28px] w-[28px]"
+              variant="icon"
+            />
           </span>
-          <span>Social Comment Generator</span>
+          <span className="hidden md:inline-flex">
+            <BrandLogo
+              aria-hidden="true"
+              className="drop-shadow-[0_0_14px_rgba(34,211,238,0.12)] transition duration-200 ease-out group-hover:brightness-110"
+              imageClassName="h-auto w-[164px] max-w-none"
+              variant="brand"
+            />
+          </span>
+          <span className="sr-only">Commentra</span>
         </Link>
-        <nav className="flex items-center gap-1">
+        <nav className="flex h-full items-center gap-1.5">
           <Link
-            className="rounded-md px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-white/8 hover:text-white"
+            className="inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-zinc-300 transition duration-200 ease-out hover:bg-white/8 hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.16)]"
             href={`/${locale}/generator`}
           >
             {dictionary.nav.generator}
           </Link>
           {session.status === "anonymous" ? (
             <Link
-              className="hidden rounded-md px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-white/8 hover:text-white sm:inline-flex"
+              className="hidden h-9 items-center rounded-md px-3 text-sm font-medium text-zinc-300 transition duration-200 ease-out hover:bg-white/8 hover:text-white hover:shadow-[inset_0_0_0_1px_rgba(34,211,238,0.16)] sm:inline-flex"
               href={`/${locale}/login`}
             >
               {dictionary.nav.login}
@@ -43,7 +57,7 @@ export function Navbar({ dictionary, locale, session }: NavbarProps) {
               <span className="max-w-40 truncate text-xs text-zinc-500">
                 {session.displayName ?? session.email}
               </span>
-              <LogoutButton label={dictionary.nav.logout} />
+              <LogoutButton className="min-h-0 h-9 px-3" label={dictionary.nav.logout} />
             </div>
           )}
           <LanguageSwitcher dictionary={dictionary} locale={locale} />

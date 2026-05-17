@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: dictionary.meta.landingTitle,
       description: dictionary.meta.landingDescription,
       locale,
-      siteName: "Social Comment Generator",
+      siteName: "Commentra",
       type: "website",
       url: `/${locale}`,
     },

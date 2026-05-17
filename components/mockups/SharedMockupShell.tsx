@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 type SharedMockupShellProps = {
   children: ReactNode;
@@ -10,15 +11,22 @@ type SharedMockupShellProps = {
 export function SharedMockupShell({
   children,
   watermark = false,
-  watermarkText = "Made with Social Comment Generator",
+  watermarkText = "Made with Commentra",
   className = "",
 }: SharedMockupShellProps) {
   return (
     <div className={`relative bg-transparent ${className}`}>
       {children}
       {watermark ? (
-        <div className="pointer-events-none absolute bottom-2 right-3 rounded bg-black/35 px-2 py-1 text-[10px] font-medium text-white/55">
-          {watermarkText}
+        <div className="pointer-events-none absolute bottom-2 right-3">
+          <Image
+            alt={watermarkText}
+            className="h-4 w-auto opacity-60"
+            height={16}
+            src="/assets/icons/commentra-logo.svg"
+            unoptimized
+            width={16}
+          />
         </div>
       ) : null}
     </div>

@@ -1,7 +1,7 @@
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 import type { MockupData } from "@/lib/mockups/types";
 import { Button } from "@/components/ui/Button";
-import { getAvatar } from "@/lib/mockups/avatars";
+import { AvatarBubble } from "@/components/mockups/AvatarBubble";
 
 type RecentMockupsProps = {
   dictionary: Dictionary;
@@ -17,7 +17,7 @@ export function RecentMockups({
   onClear,
 }: RecentMockupsProps) {
   return (
-    <section className="rounded-lg border border-white/10 bg-zinc-950 p-4">
+    <section className="rounded-lg border border-white/10 bg-zinc-950 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)] transition duration-200 ease-out hover:border-cyan-300/20">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-white">
           {dictionary.generator.recentTitle}
@@ -31,23 +31,25 @@ export function RecentMockups({
       {items.length ? (
         <div className="grid gap-3">
           {items.map((item) => {
-            const avatar = getAvatar(item.avatarId);
-
             return (
               <article
-                className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.03] p-3"
+                className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.03] p-3 transition duration-200 ease-out hover:border-cyan-300/18 hover:bg-white/[0.05]"
                 key={item.id}
               >
-                <div
-                  className={`grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br ${avatar.gradient} text-sm font-black text-white`}
-                >
-                  {avatar.initials}
-                </div>
+                <AvatarBubble
+                  avatarId={item.mainAuthor.avatarPresetId ?? "avatar-01"}
+                  imageSrc={
+                    item.mainAuthor.avatarType === "uploaded"
+                      ? item.mainAuthor.avatarUrl
+                      : item.mainAuthor.avatarPresetUrl
+                  }
+                  size="md"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-white">
-                    {item.username}
+                    {item.mainAuthor.name}
                   </div>
-                  <p className="truncate text-sm text-zinc-400">{item.comment}</p>
+                  <p className="truncate text-sm text-zinc-400">{item.mainText}</p>
                 </div>
                 <Button
                   onClick={() => onReuse(item)}
